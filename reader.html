@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Dialogue Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .human {
+            background-color: #e6f3ff;
+        }
+
+        .supervisor, .reviewer {
+            background-color: #f0f0f0;
+        }
+
+        .role {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="fileInput" accept=".json">
+    <div id="dialogue"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.min.js"></script>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const json = JSON.parse(e.target.result);
+                displayDialogue(json);
+            };
+            reader.readAsText(file);
+        });
+
+        function displayDialogue(dialogue) {
+            const dialogueDiv = document.getElementById('dialogue');
+            dialogueDiv.innerHTML = '';
+            dialogue.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${message.role}`;
+                messageDiv.innerHTML = `<div class="role">${message.role}:</div>`;
+
+                // Обработка LaTeX перед Markdown
+                let processedContent = message.content.replace(/\\\[([\s\S]*?)\\\]/g, (match, p1) => {
+                    return katex.renderToString(p1, { displayMode: true });
+                });
+                processedContent = processedContent.replace(/\\\(([\s\S]*?)\\\)/g, (match, p1) => {
+                    return katex.renderToString(p1, { displayMode: false });
+                });
+
+                // Затем обработка Markdown
+                processedContent = marked.parse(processedContent);
+                messageDiv.innerHTML += processedContent;
+
+                dialogueDiv.appendChild(messageDiv);
+            });
+        }
+    </script>
+</body>
+</html>
